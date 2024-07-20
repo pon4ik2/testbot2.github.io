@@ -73,7 +73,7 @@
         async function handleButtonClick() {
             const currentTime = Date.now();
             if (currentTime - lastClickTime >= cooldownPeriod) {
-                score++;
+                score += 10;
                 lastClickTime = currentTime;
                 updateScore();
                 await saveUserData();
