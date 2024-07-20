@@ -36,17 +36,30 @@
         let score = 0;
         let userId, username;
 
-        const API_URL = '/api'; // This will work on Vercel
+        const API_URL = '/api'; // Use this if your API is on the same domain
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded and parsed');
+            
             tg.expand();
 
-            userId = tg.initDataUnsafe.user.id;
-            username = tg.initDataUnsafe.user.username;
+            console.log('Telegram WebApp object:', tg);
+            console.log('Telegram WebApp initData:', tg.initData);
+            console.log('Telegram WebApp initDataUnsafe:', tg.initDataUnsafe);
+
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                userId = tg.initDataUnsafe.user.id;
+                username = tg.initDataUnsafe.user.username;
+                console.log('User ID:', userId);
+                console.log('Username:', username);
+            } else {
+                console.error('User data not available in Telegram WebApp');
+            }
 
             loadUserData();
 
             document.getElementById('clickButton').addEventListener('click', function() {
+                console.log('Button clicked');
                 score++;
                 updateScore();
                 saveUserData();
@@ -54,14 +67,17 @@
         });
 
         function updateScore() {
+            console.log('Updating score to:', score);
             document.getElementById('score').textContent = 'Score: ' + score;
         }
 
         function updateUsername() {
+            console.log('Updating username to:', username);
             document.getElementById('username').textContent = username;
         }
 
         async function saveUserData() {
+            console.log('Attempting to save user data');
             try {
                 const response = await fetch(`${API_URL}/saveUser`, {
                     method: 'POST',
@@ -71,6 +87,7 @@
                     body: JSON.stringify({ id: userId, username, score }),
                 });
                 const data = await response.json();
+                console.log('Save response:', data);
                 if (!data.success) {
                     console.error('Failed to save user data');
                 }
@@ -80,9 +97,11 @@
         }
 
         async function loadUserData() {
+            console.log('Attempting to load user data');
             try {
                 const response = await fetch(`${API_URL}/getUser/${userId}`);
                 const data = await response.json();
+                console.log('Loaded user data:', data);
                 username = data.username || username;
                 score = data.score || 0;
                 updateUsername();
