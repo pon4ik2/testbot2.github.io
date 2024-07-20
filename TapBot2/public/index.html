@@ -35,17 +35,13 @@
         let tg = window.Telegram.WebApp;
         let score = 0;
         let userId, username;
+        let lastClickTime = 0;
+        const cooldownPeriod = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
-        const API_URL = '/api'; // Use this if your API is on the same domain
+        const API_URL = 'https://your-vercel-url.vercel.app/api'; // Replace with your actual Vercel URL
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM fully loaded and parsed');
-            
             tg.expand();
-
-            console.log('Telegram WebApp object:', tg);
-            console.log('Telegram WebApp initData:', tg.initData);
-            console.log('Telegram WebApp initDataUnsafe:', tg.initDataUnsafe);
 
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 userId = tg.initDataUnsafe.user.id;
@@ -58,34 +54,63 @@
 
             loadUserData();
 
-            document.getElementById('clickButton').addEventListener('click', function() {
-                console.log('Button clicked');
-                score++;
-                updateScore();
-                saveUserData();
-            });
+            const button = document.getElementById('clickButton');
+            button.addEventListener('click', handleButtonClick);
+
+            updateButtonState();
+            setInterval(updateButtonState, 1000); // Update every second
         });
 
         function updateScore() {
-            console.log('Updating score to:', score);
             document.getElementById('score').textContent = 'Score: ' + score;
         }
 
         function updateUsername() {
-            console.log('Updating username to:', username);
             document.getElementById('username').textContent = username;
         }
 
+        async function handleButtonClick() {
+            const currentTime = Date.now();
+            if (currentTime - lastClickTime >= cooldownPeriod) {
+                score++;
+                lastClickTime = currentTime;
+                updateScore();
+                await saveUserData();
+                updateButtonState();
+            }
+        }
+
+        function updateButtonState() {
+            const button = document.getElementById('clickButton');
+            const currentTime = Date.now();
+            const timeLeft = cooldownPeriod - (currentTime - lastClickTime);
+            
+            if (timeLeft > 0) {
+                const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+                const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+                const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+                button.textContent = `Wait ${hours}h ${minutes}m ${seconds}s`;
+                button.disabled = true;
+            } else {
+                button.textContent = 'Click me!';
+                button.disabled = false;
+            }
+        }
+
         async function saveUserData() {
-            console.log('Attempting to save user data');
             try {
                 const response = await fetch(`${API_URL}/saveUser`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id: userId, username, score }),
+                    body: JSON.stringify({ id: userId, username, score, lastClickTime }),
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 console.log('Save response:', data);
                 if (!data.success) {
@@ -97,15 +122,19 @@
         }
 
         async function loadUserData() {
-            console.log('Attempting to load user data');
             try {
                 const response = await fetch(`${API_URL}/getUser/${userId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
                 console.log('Loaded user data:', data);
                 username = data.username || username;
                 score = data.score || 0;
+                lastClickTime = data.lastClickTime || 0;
                 updateUsername();
                 updateScore();
+                updateButtonState();
             } catch (error) {
                 console.error('Error loading user data:', error);
             }
