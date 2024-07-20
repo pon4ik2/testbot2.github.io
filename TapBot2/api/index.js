@@ -72,15 +72,4 @@ app.get('/api/getUser/:id', (req, res) => {
     }
 });
 
-// Root route for testing
-app.get('/', (req, res) => {
-    res.json({ message: 'API is working' });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('An error occurred:', err);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-});
-
 module.exports = app;
