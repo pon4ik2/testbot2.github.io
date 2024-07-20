@@ -21,14 +21,14 @@ app.post('/api/saveUser', (req, res) => {
     console.log('Request body:', req.body);
 
     try {
-        const { id, username, score } = req.body;
+        const { id, username, score, lastClickTime } = req.body;
         
-        if (!id || !username || score === undefined) {
+        if (!id || !username || score === undefined || lastClickTime === undefined) {
             console.error('Invalid data received');
             return res.status(400).json({ success: false, error: 'Invalid data' });
         }
 
-        users[id] = { username, score };
+        users[id] = { username, score, lastClickTime };
         console.log('Updated users object:', users);
 
         res.json({ success: true });
@@ -50,7 +50,7 @@ app.get('/api/getUser/:id', (req, res) => {
             res.json(users[id]);
         } else {
             console.log('User not found, returning default data');
-            res.json({ username: '', score: 0 });
+            res.json({ username: '', score: 0, lastClickTime: 0 });
         }
     } catch (error) {
         console.error('Error in /api/getUser:', error);
@@ -68,13 +68,5 @@ app.use((err, req, res, next) => {
     console.error('An error occurred:', err);
     res.status(500).json({ success: false, error: 'Internal server error' });
 });
-
-// For local testing
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
-}
 
 module.exports = app;
