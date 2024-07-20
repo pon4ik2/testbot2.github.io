@@ -30,13 +30,11 @@
             font-weight: bold;
             margin-bottom: 20px;
         }
-        #clickButton {
+        #clickButton, #copyReferralButton {
             font-size: 18px;
             padding: 10px 20px;
             margin-bottom: 20px;
-        }
-        #referralLink {
-            margin-bottom: 20px;
+            cursor: pointer;
         }
         #tabs {
             display: flex;
@@ -57,32 +55,46 @@
         .tab-content.active {
             display: block;
         }
+        #copyNotification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div id="content">
         <div id="username"></div>
-        <div id="score">Score: 0</div>
         <div id="gameTab" class="tab-content active">
+            <div id="score">Score: 0</div>
             <button id="clickButton">Click me!</button>
         </div>
         <div id="referralTab" class="tab-content">
             <h2>Referral System</h2>
             <p>Invite friends and earn 50 coins for each new user!</p>
-            <div id="referralLink"></div>
+            <p>Referred users: <span id="referralCount">0</span></p>
+            <p>Coins earned from referrals: <span id="referralEarnings">0</span></p>
+            <button id="copyReferralButton">Copy Referral Link</button>
         </div>
     </div>
     <div id="tabs">
         <div class="tab active" onclick="switchTab('gameTab')">Game</div>
         <div class="tab" onclick="switchTab('referralTab')">Referral</div>
     </div>
+    <div id="copyNotification">Link copied!</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         let score = 0;
         let userId, username;
         let lastClickTime = 0;
-        const cooldownPeriod = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+        const cooldownPeriod = 60 * 1000; // 1 minute in milliseconds
 
         const API_URL = 'https://testbot2-github-io-62lc.vercel.app/api';
 
@@ -103,12 +115,11 @@
             const button = document.getElementById('clickButton');
             button.addEventListener('click', handleButtonClick);
 
+            const copyButton = document.getElementById('copyReferralButton');
+            copyButton.addEventListener('click', copyReferralLink);
+
             updateButtonState();
             setInterval(updateButtonState, 1000); // Update every second
-
-            // Generate and display referral link
-            const referralLink = `https://t.me/taptestttbot?start=${userId}`;
-            document.getElementById('referralLink').textContent = `Your referral link: ${referralLink}`;
         });
 
         function switchTab(tabId) {
@@ -129,7 +140,7 @@
         async function handleButtonClick() {
             const currentTime = Date.now();
             if (currentTime - lastClickTime >= cooldownPeriod) {
-                score++;
+                score += 10;
                 lastClickTime = currentTime;
                 updateScore();
                 await saveUserData();
@@ -143,15 +154,25 @@
             const timeLeft = cooldownPeriod - (currentTime - lastClickTime);
             
             if (timeLeft > 0) {
-                const hours = Math.floor(timeLeft / (60 * 60 * 1000));
-                const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+                const minutes = Math.floor(timeLeft / (60 * 1000));
                 const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
-                button.textContent = `Wait ${hours}h ${minutes}m ${seconds}s`;
+                button.textContent = `Wait ${minutes}m ${seconds}s`;
                 button.disabled = true;
             } else {
                 button.textContent = 'Click me!';
                 button.disabled = false;
             }
+        }
+
+        function copyReferralLink() {
+            const referralLink = `https://t.me/taptestttbot?start=${userId}`;
+            navigator.clipboard.writeText(referralLink).then(() => {
+                const notification = document.getElementById('copyNotification');
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2000);
+            });
         }
 
         async function saveUserData() {
@@ -192,6 +213,8 @@
                 updateUsername();
                 updateScore();
                 updateButtonState();
+                document.getElementById('referralCount').textContent = data.referrals ? data.referrals.length : 0;
+                document.getElementById('referralEarnings').textContent = (data.referrals ? data.referrals.length : 0) * 50;
             } catch (error) {
                 console.error('Error loading user data:', error);
             }
