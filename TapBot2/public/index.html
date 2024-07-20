@@ -95,12 +95,12 @@
         let userId, username;
         let lastClickTime = 0;
         const cooldownPeriod = 60 * 1000; // 1 minute in milliseconds
-
+    
         const API_URL = 'https://testbot2-github-io-62lc.vercel.app/api';
-
+    
         document.addEventListener('DOMContentLoaded', function() {
             tg.expand();
-
+    
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 userId = tg.initDataUnsafe.user.id;
                 username = tg.initDataUnsafe.user.username;
@@ -109,83 +109,69 @@
             } else {
                 console.error('User data not available in Telegram WebApp');
             }
-
+    
             // Получение реферального параметра из URL
             const urlParams = new URLSearchParams(window.location.search);
             const referrer = urlParams.get('start');
-
+    
             if (referrer) {
                 // Сохраняем реферера в localStorage
                 localStorage.setItem('referrer', referrer);
             }
-
-            loadUserData();
-
+    
+            initializeUser();
+    
             const button = document.getElementById('clickButton');
             button.addEventListener('click', handleButtonClick);
-
+    
             const copyButton = document.getElementById('copyReferralButton');
             copyButton.addEventListener('click', copyReferralLink);
-
+    
             updateButtonState();
             setInterval(updateButtonState, 1000); // Update every second
         });
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-        }
-
-        function updateScore() {
-            document.getElementById('score').textContent = 'Score: ' + score;
-        }
-
-        function updateUsername() {
-            document.getElementById('username').textContent = username;
-        }
-
-        async function handleButtonClick() {
-            const currentTime = Date.now();
-            if (currentTime - lastClickTime >= cooldownPeriod) {
-                score += 10;
-                lastClickTime = currentTime;
-                updateScore();
-                await saveUserData();
-                await loadUserData(); // Обновляем данные после сохранения
-                updateButtonState();
+    
+        async function initializeUser() {
+            try {
+                const userData = await loadUserData();
+                if (!userData || Object.keys(userData).length === 0) {
+                    // Пользователь новый, инициализируем его данные
+                    await saveUserData(true);
+                } else {
+                    // Пользователь существует, обновляем интерфейс
+                    updateUserInterface(userData);
+                }
+            } catch (error) {
+                console.error('Error initializing user:', error);
             }
         }
-
-        function updateButtonState() {
-            const button = document.getElementById('clickButton');
-            const currentTime = Date.now();
-            const timeLeft = cooldownPeriod - (currentTime - lastClickTime);
-            
-            if (timeLeft > 0) {
-                const minutes = Math.floor(timeLeft / (60 * 1000));
-                const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
-                button.textContent = `Wait ${minutes}m ${seconds}s`;
-                button.disabled = true;
-            } else {
-                button.textContent = 'Click me!';
-                button.disabled = false;
+    
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_URL}/getUser/${userId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Loaded user data:', data);
+                return data;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                return null;
             }
         }
-
-        function copyReferralLink() {
-            const referralLink = `https://t.me/taptestttbot?start=${userId}`;
-            navigator.clipboard.writeText(referralLink).then(() => {
-                const notification = document.getElementById('copyNotification');
-                notification.style.display = 'block';
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 2000);
-            });
+    
+        function updateUserInterface(userData) {
+            username = userData.username || username;
+            score = userData.score || 0;
+            lastClickTime = userData.lastClickTime || 0;
+            updateUsername();
+            updateScore();
+            updateButtonState();
+            updateReferralInfo(userData);
         }
-
-        async function saveUserData() {
+    
+        async function saveUserData(isNewUser = false) {
             try {
                 const referrer = localStorage.getItem('referrer');
                 const response = await fetch(`${API_URL}/saveUser`, {
@@ -193,7 +179,14 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id: userId, username, score, lastClickTime, referrer }),
+                    body: JSON.stringify({ 
+                        id: userId, 
+                        username, 
+                        score, 
+                        lastClickTime, 
+                        referrer,
+                        isNewUser
+                    }),
                 });
                 
                 if (!response.ok) {
@@ -207,6 +200,8 @@
                         // Очищаем реферера после успешного сохранения
                         localStorage.removeItem('referrer');
                     }
+                    // Обновляем интерфейс после сохранения
+                    updateUserInterface(data.userData);
                 } else {
                     console.error('Failed to save user data');
                 }
@@ -214,31 +209,18 @@
                 console.error('Error saving user data:', error);
             }
         }
-
-        async function loadUserData() {
-            try {
-                const response = await fetch(`${API_URL}/getUser/${userId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log('Loaded user data:', data);
-                username = data.username || username;
-                score = data.score || 0;
-                lastClickTime = data.lastClickTime || 0;
-                updateUsername();
+    
+        async function handleButtonClick() {
+            const currentTime = Date.now();
+            if (currentTime - lastClickTime >= cooldownPeriod) {
+                score += 10;
+                lastClickTime = currentTime;
                 updateScore();
+                await saveUserData();
                 updateButtonState();
-                updateReferralInfo(data);
-            } catch (error) {
-                console.error('Error loading user data:', error);
             }
         }
-
-        function updateReferralInfo(data) {
-            document.getElementById('referralCount').textContent = data.referrals ? data.referrals.length : 0;
-            document.getElementById('referralEarnings').textContent = (data.referrals ? data.referrals.length : 0) * 50;
-        }
+    
     </script>
 </body>
 </html>
