@@ -20,17 +20,22 @@ app.post('/api/saveUser', (req, res) => {
     console.log('Received POST request to /api/saveUser');
     console.log('Request body:', req.body);
 
-    const { id, username, score } = req.body;
-    
-    if (!id || !username || score === undefined) {
-        console.error('Invalid data received');
-        return res.status(400).json({ success: false, error: 'Invalid data' });
+    try {
+        const { id, username, score } = req.body;
+        
+        if (!id || !username || score === undefined) {
+            console.error('Invalid data received');
+            return res.status(400).json({ success: false, error: 'Invalid data' });
+        }
+
+        users[id] = { username, score };
+        console.log('Updated users object:', users);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error in /api/saveUser:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
-
-    users[id] = { username, score };
-    console.log('Updated users object:', users);
-
-    res.json({ success: true });
 });
 
 app.get('/api/getUser/:id', (req, res) => {
@@ -39,13 +44,23 @@ app.get('/api/getUser/:id', (req, res) => {
     const id = req.params.id;
     console.log('Requested user ID:', id);
 
-    if (users[id]) {
-        console.log('User found:', users[id]);
-        res.json(users[id]);
-    } else {
-        console.log('User not found, returning default data');
-        res.json({ username: '', score: 0 });
+    try {
+        if (users[id]) {
+            console.log('User found:', users[id]);
+            res.json(users[id]);
+        } else {
+            console.log('User not found, returning default data');
+            res.json({ username: '', score: 0 });
+        }
+    } catch (error) {
+        console.error('Error in /api/getUser:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
+});
+
+// Root route for testing
+app.get('/', (req, res) => {
+    res.json({ message: 'API is working' });
 });
 
 // Error handling middleware
@@ -54,11 +69,12 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
-// If you're using Vercel, you need to export the app
-module.exports = app;
+// For local testing
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
 
-// If you're running this directly (not on Vercel), uncomment these lines:
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//     console.log(`Server is running on port ${PORT}`);
-// });
+module.exports = app;
