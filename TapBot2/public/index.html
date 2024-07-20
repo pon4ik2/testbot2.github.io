@@ -110,6 +110,15 @@
                 console.error('User data not available in Telegram WebApp');
             }
 
+            // Получение реферального параметра из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const referrer = urlParams.get('start');
+
+            if (referrer) {
+                // Сохраняем реферера в localStorage
+                localStorage.setItem('referrer', referrer);
+            }
+
             loadUserData();
 
             const button = document.getElementById('clickButton');
@@ -144,6 +153,7 @@
                 lastClickTime = currentTime;
                 updateScore();
                 await saveUserData();
+                await loadUserData(); // Обновляем данные после сохранения
                 updateButtonState();
             }
         }
@@ -177,12 +187,13 @@
 
         async function saveUserData() {
             try {
+                const referrer = localStorage.getItem('referrer');
                 const response = await fetch(`${API_URL}/saveUser`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id: userId, username, score, lastClickTime }),
+                    body: JSON.stringify({ id: userId, username, score, lastClickTime, referrer }),
                 });
                 
                 if (!response.ok) {
@@ -191,7 +202,12 @@
                 
                 const data = await response.json();
                 console.log('Save response:', data);
-                if (!data.success) {
+                if (data.success) {
+                    if (referrer) {
+                        // Очищаем реферера после успешного сохранения
+                        localStorage.removeItem('referrer');
+                    }
+                } else {
                     console.error('Failed to save user data');
                 }
             } catch (error) {
@@ -213,11 +229,15 @@
                 updateUsername();
                 updateScore();
                 updateButtonState();
-                document.getElementById('referralCount').textContent = data.referrals ? data.referrals.length : 0;
-                document.getElementById('referralEarnings').textContent = (data.referrals ? data.referrals.length : 0) * 50;
+                updateReferralInfo(data);
             } catch (error) {
                 console.error('Error loading user data:', error);
             }
+        }
+
+        function updateReferralInfo(data) {
+            document.getElementById('referralCount').textContent = data.referrals ? data.referrals.length : 0;
+            document.getElementById('referralEarnings').textContent = (data.referrals ? data.referrals.length : 0) * 50;
         }
     </script>
 </body>
