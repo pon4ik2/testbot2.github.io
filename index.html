@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #username {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        #clickButton {
+            font-size: 18px;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="username"></div>
+    <div id="score">Score: 0</div>
+    <button id="clickButton">Click me!</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        let score = 0;
+        let userId, username;
+
+        const API_URL = 'http://localhost:3000'; // Replace with your actual server URL
+
+        document.addEventListener('DOMContentLoaded', function() {
+            tg.expand();
+
+            userId = tg.initDataUnsafe.user.id;
+            username = tg.initDataUnsafe.user.username;
+
+            loadUserData();
+
+            document.getElementById('clickButton').addEventListener('click', function() {
+                score++;
+                updateScore();
+                saveUserData();
+            });
+        });
+
+        function updateScore() {
+            document.getElementById('score').textContent = 'Score: ' + score;
+        }
+
+        function updateUsername() {
+            document.getElementById('username').textContent = username;
+        }
+
+        async function saveUserData() {
+            try {
+                const response = await fetch(`${API_URL}/saveUser`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: userId, username, score }),
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    console.error('Failed to save user data');
+                }
+            } catch (error) {
+                console.error('Error saving user data:', error);
+            }
+        }
+
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_URL}/getUser/${userId}`);
+                const data = await response.json();
+                username = data.username || username;
+                score = data.score || 0;
+                updateUsername();
+                updateScore();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+    </script>
+</body>
+</html>
