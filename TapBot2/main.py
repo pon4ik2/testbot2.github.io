@@ -6,7 +6,7 @@ import json
 
 app = Flask(__name__)
 
-TOKEN = os.environ.get('TOKEN')
+TOKEN = ('7214325392:AAEGuEDFxdtPiPZDEZCiipkB9jebdDh9_7s')
 bot = Bot(token=TOKEN)
 
 # Путь к файлу с данными пользователей
