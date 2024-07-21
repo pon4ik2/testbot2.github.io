@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, send_file, request, jsonify
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, CallbackContext
 import json
@@ -83,6 +83,10 @@ dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CallbackQueryHandler(button_click))
 dispatcher.add_error_handler(error_handler)
 
+@app.route('/')
+def home():
+    return send_file('index.html')
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     logger.info("Webhook received")
@@ -90,9 +94,10 @@ def webhook():
     dispatcher.process_update(update)
     return 'OK'
 
-@app.route('/')
-def index():
-    return send_file('index.html')
+#
+#@app.route('/')
+#def index():
+#    return send_file('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
