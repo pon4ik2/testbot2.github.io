@@ -76,13 +76,33 @@ def home():
 @app.route('/api/saveUser', methods=['POST'])
 def save_user():
     data = request.json
-    user_data, is_new_user = update_user(
-        data['id'],
-        data['username'],
-        points=data['points'] - user_data['points'] if 'points' in user_data else data['points'],
-        referrals=data['referrals'] - user_data['referrals'] if 'referrals' in user_data else data['referrals']
-    )
-    return jsonify({"success": True, "isNewUser": is_new_user, "userData": user_data})
+    users = load_users()
+    user_id = str(data['id'])
+    
+    if user_id in users:
+        users[user_id]['username'] = data['username']
+        users[user_id]['points'] = data['points']
+        users[user_id]['lastClickTime'] = data['lastClickTime']
+        users[user_id]['referrals'] = data['referrals']
+        is_new_user = False
+    else:
+        users[user_id] = {
+            'username': data['username'],
+            'points': 50 if data['referrer'] else 0,
+            'lastClickTime': data['lastClickTime'],
+            'referrals': 0,
+            'referrer': data['referrer']
+        }
+        is_new_user = True
+
+    if is_new_user and data['referrer']:
+        referrer_id = str(data['referrer'])
+        if referrer_id in users:
+            users[referrer_id]['points'] += 50
+            users[referrer_id]['referrals'] += 1
+
+    save_users(users)
+    return jsonify({"success": True, "isNewUser": is_new_user, "userData": users[user_id]})
 
 @app.route('/api/getUser/<user_id>')
 def get_user(user_id):
