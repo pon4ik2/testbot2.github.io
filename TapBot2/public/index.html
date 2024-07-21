@@ -45,6 +45,7 @@
             justify-content: center;
             align-items: center;
             text-align: center;
+            margin: 0 auto;
         }
         #clickButton:disabled {
             opacity: 0.5;
@@ -134,7 +135,7 @@
         function incrementScore() {
             const now = Date.now();
             if (now - lastClickTime >= cooldownTime) {
-                score++;
+                score += 10;
                 lastClickTime = now;
                 updateScore();
                 saveUserData();
@@ -145,22 +146,23 @@
         function startCooldown() {
             const button = document.getElementById('clickButton');
             button.disabled = true;
-            let remainingTime = cooldownTime;
-
-            function updateButtonText() {
-                const seconds = Math.ceil(remainingTime / 1000);
-                button.textContent = `Wait ${seconds}s`;
-                
-                if (remainingTime <= 0) {
-                    button.disabled = false;
-                    button.textContent = 'Click me!';
-                } else {
-                    remainingTime -= 1000;
-                    setTimeout(updateButtonText, 1000);
-                }
-            }
-
             updateButtonText();
+        }
+
+        function updateButtonText() {
+            const button = document.getElementById('clickButton');
+            const now = Date.now();
+            const remainingTime = Math.max(0, cooldownTime - (now - lastClickTime));
+            const seconds = Math.ceil(remainingTime / 1000);
+            
+            if (seconds > 0) {
+                button.textContent = `Wait ${seconds}s`;
+                button.disabled = true;
+                setTimeout(updateButtonText, 1000);
+            } else {
+                button.textContent = 'Click me!';
+                button.disabled = false;
+            }
         }
 
         function updateScore() {
@@ -203,9 +205,7 @@
                     updateScore();
                     document.getElementById('username').textContent = username;
                     updateReferralInfo();
-                    if (Date.now() - lastClickTime < cooldownTime) {
-                        startCooldown();
-                    }
+                    updateButtonText();
                 })
                 .catch(error => console.error('Error:', error));
         }
