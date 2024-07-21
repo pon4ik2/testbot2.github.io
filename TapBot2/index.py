@@ -61,7 +61,7 @@ def start(update: Update, context: CallbackContext):
     else:
         welcome_text = "Welcome back! Let's continue playing."
 
-    webapp_button = InlineKeyboardButton("Play", web_app=WebAppInfo(url="https://your-webapp-url.com"))
+    webapp_button = InlineKeyboardButton("Play", web_app=WebAppInfo(url="https://testbot2-github-io-62lc.vercel.app/"))
     keyboard = InlineKeyboardMarkup([[webapp_button]])
     update.message.reply_text(welcome_text, reply_markup=keyboard)
 
