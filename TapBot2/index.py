@@ -1,6 +1,6 @@
 import logging
 from flask import Flask, request, jsonify
-from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, CallbackContext
 import json
 import os
@@ -59,9 +59,9 @@ def start(update: Update, context: CallbackContext):
         user_data = users[str(user_id)]
         welcome_text = f"С возвращением! Твой текущий баланс: {user_data['points']} поинтов."
 
-    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Играть", callback_data="play")]])
+    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://testbot2-github-io-62lc.vercel.app/"))
+    keyboard = InlineKeyboardMarkup([[webapp_button]])
     update.message.reply_text(welcome_text, reply_markup=keyboard)
-    logger.info(f"Reply sent to user {user_id}")
 
 def button_click(update: Update, context: CallbackContext):
     logger.info("Button click received")
@@ -92,7 +92,7 @@ def webhook():
 
 @app.route('/')
 def index():
-    return 'Bot is running'
+    return send_file('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
