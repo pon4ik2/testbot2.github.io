@@ -226,11 +226,20 @@
 
         function copyReferralLink() {
             const link = generateReferralLink();
-            tg.copyTextToClipboard(link);
-            document.getElementById('copyNotification').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('copyNotification').style.display = 'none';
-            }, 2000);
+            navigator.clipboard.writeText(link).then(() => {
+                tg.showPopup({
+                    title: 'Success',
+                    message: 'Referral link copied to clipboard!',
+                    buttons: [{type: 'close'}]
+                });
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                tg.showPopup({
+                    title: 'Error',
+                    message: 'Failed to copy referral link.',
+                    buttons: [{type: 'close'}]
+                });
+            });
         }
 
         function getReferrer() {
