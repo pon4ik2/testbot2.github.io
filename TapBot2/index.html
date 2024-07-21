@@ -25,6 +25,7 @@
             font-size: 18px;
             padding: 10px 20px;
             margin-top: 20px;
+            cursor: pointer;
         }
         #welcomeModal {
             display: none;
@@ -34,7 +35,6 @@
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
             background-color: rgba(0,0,0,0.4);
         }
         .modal-content {
@@ -43,36 +43,54 @@
             padding: 20px;
             border: 1px solid #888;
             width: 80%;
+            max-width: 400px;
+            border-radius: 10px;
             text-align: center;
         }
         #closeModal {
-            margin-top: 20px;
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #closeModal:hover,
+        #closeModal:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div id="game">
         <h1>Clicker Game</h1>
+        <p>Username: <span id="username"></span></p>
         <p>Score: <span id="score">0</span></p>
+        <p>Referrals: <span id="referrals">0</span></p>
         <button id="clickButton">Click me!</button>
     </div>
 
     <div id="welcomeModal">
         <div class="modal-content">
+            <span id="closeModal">&times;</span>
             <h2>Welcome!</h2>
             <p>You've received a bonus of 50 points for being referred!</p>
-            <button id="closeModal">Close</button>
         </div>
     </div>
 
     <script>
         let userId = new URLSearchParams(window.location.search).get('id');
+        let username = '';
         let score = 0;
+        let referrals = 0;
+        let lastClickTime = new Date().toISOString();
         let isNewUser = false;
 
-        function updateScore(newScore) {
-            score = newScore;
+        function updateUI() {
+            document.getElementById('username').textContent = username;
             document.getElementById('score').textContent = score;
+            document.getElementById('referrals').textContent = referrals;
         }
 
         function saveUser() {
@@ -81,7 +99,13 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id: userId, username: 'User' + userId, score: score }),
+                body: JSON.stringify({ 
+                    id: userId, 
+                    username: username, 
+                    points: score,
+                    lastClickTime: lastClickTime,
+                    referrals: referrals
+                }),
             });
         }
 
@@ -89,8 +113,12 @@
             fetch(`/api/getUser/${userId}`)
                 .then(response => response.json())
                 .then(data => {
-                    updateScore(data.score);
-                    if (data.score === 50) {
+                    username = data.username || 'User' + userId;
+                    score = data.points;
+                    referrals = data.referrals;
+                    lastClickTime = data.lastClickTime;
+                    updateUI();
+                    if (data.points === 50 && data.referrals === 0) {
                         isNewUser = true;
                         document.getElementById('welcomeModal').style.display = 'block';
                     }
@@ -98,8 +126,14 @@
         }
 
         document.getElementById('clickButton').addEventListener('click', () => {
-            updateScore(score + 1);
-            saveUser();
+            const now = new Date();
+            const lastClick = new Date(lastClickTime);
+            if (now - lastClick >= 1000) { // Предотвращаем слишком частые клики (раз в секунду)
+                score += 1;
+                lastClickTime = now.toISOString();
+                updateUI();
+                saveUser();
+            }
         });
 
         document.getElementById('closeModal').addEventListener('click', () => {
