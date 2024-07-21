@@ -29,21 +29,24 @@ def save_users(users):
 
 def update_user(user_id, username, points=0, referrals=0, referrer=None):
     users = load_users()
-    is_new_user = str(user_id) not in users
+    user_id = str(user_id)
+    is_new_user = user_id not in users
     if is_new_user:
-        users[str(user_id)] = {
+        users[user_id] = {
             "username": username,
-            "points": points,
-            "referrals": referrals,
+            "points": 50 if referrer else 0,  # Начальные очки для новых пользователей
+            "referrals": 0,
             "lastClickTime": datetime.now().isoformat(),
             "referrer": referrer
         }
-    else:
-        users[str(user_id)]["points"] += points
-        users[str(user_id)]["referrals"] += referrals
-        users[str(user_id)]["lastClickTime"] = datetime.now().isoformat()
+    
+    users[user_id]["username"] = username  # Обновляем имя пользователя
+    users[user_id]["points"] += points
+    users[user_id]["referrals"] += referrals
+    users[user_id]["lastClickTime"] = datetime.now().isoformat()
+    
     save_users(users)
-    return users[str(user_id)], is_new_user
+    return users[user_id], is_new_user
 
 def start(update: Update, context: CallbackContext):
     logger.info("Start command received")
@@ -51,10 +54,11 @@ def start(update: Update, context: CallbackContext):
     username = update.effective_user.username
     referrer_id = context.args[0] if context.args else None
 
-    user_data, is_new_user = update_user(user_id, username, points=50 if referrer_id else 0, referrer=referrer_id)
+    user_data, is_new_user = update_user(user_id, username, referrer=referrer_id)
 
     if is_new_user and referrer_id:
-        referrer_data, _ = update_user(int(referrer_id), "", points=50, referrals=1)
+        referrer_data, _ = update_user(int(referrer_id), "", referrals=1)
+        update_user(int(referrer_id), "", points=50)  # Добавляем очки рефереру
         welcome_text = f"Welcome! You were invited by {referrer_data['username']}. 50 points have been added to your balance!"
     elif is_new_user:
         welcome_text = "Welcome! Let's start playing."
@@ -75,11 +79,10 @@ def save_user():
     user_data, is_new_user = update_user(
         data['id'],
         data['username'],
-        points=data['points'],
-        referrals=data['referrals'],
-        referrer=data['referrer']
+        points=data['points'] - user_data['points'] if 'points' in user_data else data['points'],
+        referrals=data['referrals'] - user_data['referrals'] if 'referrals' in user_data else data['referrals']
     )
-    return jsonify({"success": True, "isNewUser": is_new_user})
+    return jsonify({"success": True, "isNewUser": is_new_user, "userData": user_data})
 
 @app.route('/api/getUser/<user_id>')
 def get_user(user_id):
