@@ -3,144 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clicker Game</title>
+    <title>Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        #game {
-            text-align: center;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #clickButton {
-            font-size: 18px;
-            padding: 10px 20px;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-        #welcomeModal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 400px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        #closeModal {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #closeModal:hover,
-        #closeModal:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
+        /* ... (оставляем стили без изменений) ... */
     </style>
 </head>
 <body>
-    <div id="game">
-        <h1>Clicker Game</h1>
-        <p>Username: <span id="username"></span></p>
-        <p>Score: <span id="score">0</span></p>
-        <p>Referrals: <span id="referrals">0</span></p>
-        <button id="clickButton">Click me!</button>
+    <div id="content">
+        <div id="username"></div>
+        <div id="score">Score: 0</div>
+
+        <div id="gameTab" class="tab-content active">
+            <button id="clickButton" onclick="incrementScore()">Click me!</button>
+        </div>
+
+        <div id="referralTab" class="tab-content">
+            <h2>Referral System</h2>
+            <p>Invite friends and earn 50 coins for each new user!</p>
+            <p>Referred users: <span id="referralCount">0</span></p>
+            <p>Coins earned from referrals: <span id="referralEarnings">0</span></p>
+            <button onclick="copyReferralLink()">Copy Referral Link</button>
+        </div>
     </div>
+
+    <div id="tabs">
+        <button class="tab active" onclick="switchTab('gameTab')">Game</button>
+        <button class="tab" onclick="switchTab('referralTab')">Referral</button>
+    </div>
+
+    <div id="copyNotification">Link copied!</div>
 
     <div id="welcomeModal">
         <div class="modal-content">
-            <span id="closeModal">&times;</span>
-            <h2>Welcome!</h2>
-            <p>You've received a bonus of 50 points for being referred!</p>
+            <h2>Welcome to the Game!</h2>
+            <p id="welcomeMessage"></p>
+            <button id="playButton" onclick="closeWelcomeModal()">Play</button>
         </div>
     </div>
 
     <script>
-        let userId = new URLSearchParams(window.location.search).get('id');
-        let username = '';
+        let tg = window.Telegram.WebApp;
+        let userId = tg.initDataUnsafe.user.id;
+        let username = tg.initDataUnsafe.user.username;
         let score = 0;
+        let lastClickTime = 0;
         let referrals = 0;
-        let lastClickTime = new Date().toISOString();
-        let isNewUser = false;
+        const cooldownTime = 60000; // 1 minute in milliseconds
+        let referrer = null;
 
-        function updateUI() {
-            document.getElementById('username').textContent = username;
-            document.getElementById('score').textContent = score;
-            document.getElementById('referrals').textContent = referrals;
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
         }
 
-        function saveUser() {
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        }
+
+        function incrementScore() {
+            const now = Date.now();
+            if (now - lastClickTime >= cooldownTime) {
+                score += 10;
+                lastClickTime = now;
+                updateScore();
+                saveUserData();
+                startCooldown();
+            }
+        }
+
+        function startCooldown() {
+            const button = document.getElementById('clickButton');
+            button.disabled = true;
+            updateButtonText();
+        }
+
+        function updateButtonText() {
+            const button = document.getElementById('clickButton');
+            const now = Date.now();
+            const remainingTime = Math.max(0, cooldownTime - (now - lastClickTime));
+            const seconds = Math.ceil(remainingTime / 1000);
+            
+            if (seconds > 0) {
+                button.textContent = `Wait ${seconds}s`;
+                button.disabled = true;
+                setTimeout(updateButtonText, 1000);
+            } else {
+                button.textContent = 'Click me!';
+                button.disabled = false;
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = `Score: ${score}`;
+        }
+
+        function saveUserData() {
             fetch('/api/saveUser', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    id: userId, 
-                    username: username, 
+                body: JSON.stringify({
+                    id: userId,
+                    username: username,
                     points: score,
                     lastClickTime: lastClickTime,
-                    referrals: referrals
+                    referrals: referrals,
+                    referrer: referrer
                 }),
-            });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('User data saved successfully');
+                    updateReferralInfo();
+                    if (data.isNewUser) {
+                        showWelcomeModal(data.referrerUsername);
+                    }
+                    referrer = null; // Clear the referrer after saving
+                } else {
+                    console.error('Failed to save user data');
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
 
-        function loadUser() {
+        function loadUserData() {
+            referrer = getUrlParameter('start');
             fetch(`/api/getUser/${userId}`)
                 .then(response => response.json())
                 .then(data => {
-                    username = data.username || 'User' + userId;
-                    score = data.points;
-                    referrals = data.referrals;
-                    lastClickTime = data.lastClickTime;
-                    updateUI();
-                    if (data.points === 50 && data.referrals === 0) {
-                        isNewUser = true;
-                        document.getElementById('welcomeModal').style.display = 'block';
-                    }
-                });
+                    username = data.username || username;
+                    score = data.points || 0;
+                    lastClickTime = data.lastClickTime || 0;
+                    referrals = data.referrals || 0;
+                    updateScore();
+                    document.getElementById('username').textContent = username;
+                    updateReferralInfo();
+                    updateButtonText();
+                    saveUserData(); // This will handle new user and referral logic
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        document.getElementById('clickButton').addEventListener('click', () => {
-            const now = new Date();
-            const lastClick = new Date(lastClickTime);
-            if (now - lastClick >= 1000) { // Предотвращаем слишком частые клики (раз в секунду)
-                score += 1;
-                lastClickTime = now.toISOString();
-                updateUI();
-                saveUser();
+        function updateReferralInfo() {
+            document.getElementById('referralCount').textContent = referrals;
+            document.getElementById('referralEarnings').textContent = referrals * 50;
+        }
+
+        function generateReferralLink() {
+            // Замените 'taptestttbot' на имя вашего бота
+            return `https://t.me/taptestttbot?start=${userId}`;
+        }
+
+        function copyReferralLink() {
+            const link = generateReferralLink();
+            navigator.clipboard.writeText(link).then(() => {
+                document.getElementById('copyNotification').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('copyNotification').style.display = 'none';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function showWelcomeModal(referrerUsername) {
+            const modal = document.getElementById('welcomeModal');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            if (referrerUsername) {
+                welcomeMessage.textContent = `You were invited by ${referrerUsername}. You've been awarded 50 points to start!`;
+            } else {
+                welcomeMessage.textContent = `Welcome to the game! You've been awarded 50 points to start!`;
             }
-        });
+            modal.style.display = 'block';
+        }
 
-        document.getElementById('closeModal').addEventListener('click', () => {
+        function closeWelcomeModal() {
             document.getElementById('welcomeModal').style.display = 'none';
-        });
+        }
 
-        loadUser();
+        // Initialize the app
+        tg.expand();
+        loadUserData();
     </script>
 </body>
 </html>
