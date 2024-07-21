@@ -28,15 +28,17 @@ app.post('/api/saveUser', (req, res) => {
             return res.status(400).json({ success: false, error: 'Invalid data' });
         }
 
+        let isNewUser = false;
         if (!users[id]) {
             // New user
-            users[id] = { username, score, lastClickTime, referrals: [] };
+            isNewUser = true;
+            users[id] = { username, score: 50, lastClickTime, referrals: [] }; // Start with 50 points
             
             // If there's a referrer, add bonus and update referrer's data
             if (referrer && users[referrer]) {
                 users[referrer].score += 50; // Add 50 coins to referrer
                 users[referrer].referrals.push(id);
-                console.log(`User ${referrer} referred user ${id}. New score: ${users[referrer].score}`);
+                console.log(`User ${referrer} referred user ${id}. New score for referrer: ${users[referrer].score}`);
             }
         } else {
             // Existing user, update data
@@ -47,7 +49,7 @@ app.post('/api/saveUser', (req, res) => {
 
         console.log('Updated users object:', users);
 
-        res.json({ success: true });
+        res.json({ success: true, isNewUser, referrerUsername: referrer ? users[referrer].username : null });
     } catch (error) {
         console.error('Error in /api/saveUser:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
