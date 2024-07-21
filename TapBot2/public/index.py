@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, CallbackContext
 import json
