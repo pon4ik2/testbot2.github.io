@@ -1,12 +1,12 @@
-from flask import Flask, request, Response
+from flask import Flask, request
 from telegram import Bot, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, Dispatcher
 import os
-import json
+#import json
 
 app = Flask(__name__)
 
-TOKEN = ('7214325392:AAEGuEDFxdtPiPZDEZCiipkB9jebdDh9_7s')
+TOKEN = os.environ.get('TOKEN')
 bot = Bot(token=TOKEN)
 
 # Путь к файлу с данными пользователей
