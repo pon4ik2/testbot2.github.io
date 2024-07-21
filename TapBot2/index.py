@@ -4,6 +4,7 @@ from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, We
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, CallbackContext
 import json
 import os
+from datetime import datetime
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG,
@@ -32,10 +33,16 @@ def save_users(users):
 def update_user(user_id, username, points=0, referrals=0):
     users = load_users()
     if str(user_id) not in users:
-        users[str(user_id)] = {"username": username, "points": points, "referrals": referrals}
+        users[str(user_id)] = {
+            "username": username,
+            "points": points,
+            "referrals": referrals,
+            "lastClickTime": datetime.now().isoformat()
+        }
     else:
         users[str(user_id)]["points"] += points
         users[str(user_id)]["referrals"] += referrals
+        users[str(user_id)]["lastClickTime"] = datetime.now().isoformat()
     save_users(users)
     return users[str(user_id)]
 
@@ -49,15 +56,14 @@ def start(update: Update, context: CallbackContext):
     referrer_id = context.args[0] if context.args else None
 
     if is_new_user and referrer_id:
-        user_data = update_user(user_id, username, points+=50)
-        referrer_data = update_user(referrer_id, "", points+=50, referrals+=1)
+        user_data = update_user(user_id, username, points=50)
+        referrer_data = update_user(int(referrer_id), "", points=50, referrals=1)
         welcome_text = f"Приветствуем! Тебя пригласил {referrer_data['username']}. На твой баланс начислено 50 поинтов!"
     elif is_new_user:
         user_data = update_user(user_id, username)
         welcome_text = "Приветствуем! Давай играть."
     else:
         user_data = users[str(user_id)]
-        #welcome_text = f"С возвращением! Твой текущий баланс: {user_data['points']} поинтов."
         welcome_text = f"С возвращением! Давай дальше играть."
 
     webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://testbot2-github-io-62lc.vercel.app/"))
@@ -95,11 +101,6 @@ def webhook():
     logger.info(f"Update: {update}")
     dispatcher.process_update(update)
     return 'OK'
-
-#
-#@app.route('/')
-#def index():
-#    return send_file('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
