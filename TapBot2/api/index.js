@@ -36,6 +36,7 @@ app.post('/api/saveUser', (req, res) => {
             if (referrer && users[referrer]) {
                 users[referrer].score += 50; // Add 50 coins to referrer
                 users[referrer].referrals.push(id);
+                console.log(`User ${referrer} referred user ${id}. New score: ${users[referrer].score}`);
             }
         } else {
             // Existing user, update data
