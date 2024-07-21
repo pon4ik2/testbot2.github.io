@@ -23,7 +23,7 @@ app.post('/api/saveUser', (req, res) => {
     try {
         const { id, username, score, lastClickTime, referrer } = req.body;
         
-        if (!id || !username) {
+        if (!id || !username || score === undefined || lastClickTime === undefined) {
             console.error('Invalid data received');
             return res.status(400).json({ success: false, error: 'Invalid data' });
         }
@@ -32,7 +32,7 @@ app.post('/api/saveUser', (req, res) => {
         if (!users[id]) {
             // New user
             isNewUser = true;
-            users[id] = { username, score: 50, lastClickTime: Date.now(), referrals: [] }; // Start with 50 points
+            users[id] = { username, score: 50, lastClickTime, referrals: [] }; // Start with 50 points
             
             // If there's a referrer, add bonus and update referrer's data
             if (referrer && users[referrer]) {
@@ -43,18 +43,13 @@ app.post('/api/saveUser', (req, res) => {
         } else {
             // Existing user, update data
             users[id].username = username;
-            users[id].score = score || users[id].score;
-            users[id].lastClickTime = lastClickTime || users[id].lastClickTime;
+            users[id].score = score;
+            users[id].lastClickTime = lastClickTime;
         }
 
         console.log('Updated users object:', users);
 
-        res.json({ 
-            success: true, 
-            isNewUser, 
-            referrerUsername: referrer && users[referrer] ? users[referrer].username : null,
-            user: users[id]
-        });
+        res.json({ success: true, isNewUser, referrerUsername: referrer ? users[referrer].username : null });
     } catch (error) {
         console.error('Error in /api/saveUser:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
