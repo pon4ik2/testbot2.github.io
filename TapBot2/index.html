@@ -171,35 +171,40 @@
             document.getElementById('score').textContent = `Score: ${score}`;
         }
 
-        function saveUserData() {
-            fetch('/api/saveUser', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id: userId,
-                    username: username,
-                    points: score,
-                    lastClickTime: lastClickTime,
-                    referrals: referrals,
-                    referrer: referrer
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('User data saved successfully');
-                    updateReferralInfo();
-                    if (data.isNewUser) {
-                        showWelcomeModal(data.referrerUsername);
-                    }
-                    referrer = null; // Clear the referrer after saving
-                } else {
-                    console.error('Failed to save user data');
+       function saveUserData() {
+        fetch('/api/saveUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: userId,
+                username: username,
+                points: score,
+                lastClickTime: lastClickTime,
+                referrals: referrals,
+                referrer: referrer
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('User data saved successfully');
+                updateReferralInfo();
+                if (data.isNewUser) {
+                    showWelcomeModal(data.userData.referrer);
                 }
-            })
-            .catch(error => console.error('Error:', error));
+                // Обновляем локальные данные из полученных с сервера
+                score = data.userData.points;
+                referrals = data.userData.referrals;
+                updateScore();
+                updateReferralInfo();
+                referrer = null; // Clear the referrer after saving
+            } else {
+                console.error('Failed to save user data');
+            }
+        })
+        .catch(error => console.error('Error:', error));
         }
 
         function loadUserData() {
@@ -209,13 +214,15 @@
                 .then(data => {
                     username = data.username || username;
                     score = data.points || 0;
-                    lastClickTime = data.lastClickTime || 0;
+                    lastClickTime = new Date(data.lastClickTime).getTime() || 0;
                     referrals = data.referrals || 0;
                     updateScore();
                     document.getElementById('username').textContent = username;
                     updateReferralInfo();
                     updateButtonText();
-                    saveUserData(); // This will handle new user and referral logic
+                    if (referrer) {
+                        saveUserData(); // This will handle new user and referral logic
+                    }
                 })
                 .catch(error => console.error('Error:', error));
         }
