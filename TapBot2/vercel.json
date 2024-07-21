@@ -16,12 +16,8 @@
       "dest": "index.py"
     },
     {
-      "src": "/",
-      "dest": "index.html"
-    },
-    {
       "src": "/(.*)",
-      "dest": "index.py"
+      "dest": "/$1"
     }
   ]
 }
