@@ -124,6 +124,14 @@
         let score = 0;
         let lastClickTime = 0;
         const cooldownTime = 60000; // 1 minute in milliseconds
+        let referrer = null;
+
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -180,7 +188,7 @@
                     username: username,
                     score: score,
                     lastClickTime: lastClickTime,
-                    referrer: getReferrer()
+                    referrer: referrer
                 }),
             })
             .then(response => response.json())
@@ -188,6 +196,7 @@
                 if (data.success) {
                     console.log('User data saved successfully');
                     updateReferralInfo();
+                    referrer = null; // Clear the referrer after saving
                 } else {
                     console.error('Failed to save user data');
                 }
@@ -196,6 +205,7 @@
         }
 
         function loadUserData() {
+            referrer = getUrlParameter('start');
             fetch(`/api/getUser/${userId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -206,6 +216,9 @@
                     document.getElementById('username').textContent = username;
                     updateReferralInfo();
                     updateButtonText();
+                    if (referrer) {
+                        saveUserData(); // This will save the referrer
+                    }
                 })
                 .catch(error => console.error('Error:', error));
         }
@@ -221,7 +234,8 @@
         }
 
         function generateReferralLink() {
-            return `https://t.me/${tg.initDataUnsafe.user.username}?start=${userId}`;
+            // Замените 'taptestttbot' на имя вашего бота
+            return `https://t.me/taptestttbot?start=${userId}`;
         }
 
         function copyReferralLink() {
@@ -234,11 +248,6 @@
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
             });
-        }
-
-        function getReferrer() {
-            const startParam = tg.initDataUnsafe.start_param;
-            return startParam ? startParam : null;
         }
 
         // Initialize the app
