@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const USERS_FILE = "users.json";
+const USERS_FILE = "/tmp/users.json";
 
 function loadUsers() {
     if (fs.existsSync(USERS_FILE)) {
@@ -26,15 +26,15 @@ app.post('/api/saveUser', (req, res) => {
     console.log('Request body:', req.body);
 
     try {
-        const { id, username, score } = req.body;
+        const { id, username, points, lastClickTime, referrals } = req.body;
         
-        if (!id || !username || score === undefined) {
+        if (!id || !username || points === undefined || !lastClickTime) {
             console.error('Invalid data received');
             return res.status(400).json({ success: false, error: 'Invalid data' });
         }
 
         let users = loadUsers();
-        users[id] = { username, score };
+        users[id] = { username, points, lastClickTime, referrals: referrals || 0 };
         saveUsers(users);
 
         res.json({ success: true });
@@ -57,7 +57,7 @@ app.get('/api/getUser/:id', (req, res) => {
             res.json(users[id]);
         } else {
             console.log('User not found, returning default data');
-            res.json({ username: '', score: 50 });
+            res.json({ username: '', points: 50, lastClickTime: new Date().toISOString(), referrals: 0 });
         }
     } catch (error) {
         console.error('Error in /api/getUser:', error);
