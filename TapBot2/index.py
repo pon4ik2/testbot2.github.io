@@ -1,12 +1,19 @@
-from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import CommandHandler, CallbackQueryHandler, Dispatcher
+import logging
+from flask import Flask, request, jsonify
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, CallbackContext
+import json
 import os
-#import json
+
+# Настройка логирования
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-TOKEN = ('7214325392:AAEGuEDFxdtPiPZDEZCiipkB9jebdDh9_7s')
+# Замените на ваш токен бота
+TOKEN = '7214325392:AAEGuEDFxdtPiPZDEZCiipkB9jebdDh9_7s'
 bot = Bot(token=TOKEN)
 
 # Путь к файлу с данными пользователей
@@ -32,7 +39,8 @@ def update_user(user_id, username, points=0, referrals=0):
     save_users(users)
     return users[str(user_id)]
 
-def start(update, context):
+def start(update: Update, context: CallbackContext):
+    logger.info("Start command received")
     user_id = update.effective_user.id
     username = update.effective_user.username
     users = load_users()
@@ -51,9 +59,12 @@ def start(update, context):
         user_data = users[str(user_id)]
         welcome_text = f"С возвращением! Твой текущий баланс: {user_data['points']} поинтов."
 
-    update.message.reply_text(welcome_text)
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Играть", callback_data="play")]])
+    update.message.reply_text(welcome_text, reply_markup=keyboard)
+    logger.info(f"Reply sent to user {user_id}")
 
-def button_click(update, context):
+def button_click(update: Update, context: CallbackContext):
+    logger.info("Button click received")
     query = update.callback_query
     query.answer()
 
@@ -61,13 +72,20 @@ def button_click(update, context):
         user_id = query.from_user.id
         user_data = load_users().get(str(user_id), {"points": 0})
         query.edit_message_text(f"Начинаем игру! Твой текущий баланс: {user_data['points']} поинтов.")
+        logger.info(f"Game started for user {user_id}")
 
+def error_handler(update: Update, context: CallbackContext):
+    logger.error(f"An error occurred: {context.error}")
+
+# Настройка диспетчера
 dispatcher = Dispatcher(bot, None, use_context=True)
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CallbackQueryHandler(button_click))
+dispatcher.add_error_handler(error_handler)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    logger.info("Webhook received")
     update = Update.de_json(request.get_json(force=True), bot)
     dispatcher.process_update(update)
     return 'OK'
@@ -77,4 +95,4 @@ def index():
     return 'Bot is running'
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
