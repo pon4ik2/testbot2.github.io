@@ -1,5 +1,14 @@
 {
   "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "builds": [
     {
       "src": "main.py",
