@@ -3,120 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Mini App</title>
+    <title>Telegram Mini App Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: var(--tg-theme-bg-color, #f0f2f5);
-            color: var(--tg-theme-text-color, #000000);
-        }
-        #content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        #username {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        #score {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-        #clickButton {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background-color: var(--tg-theme-button-color, #4CAF50);
-            color: var(--tg-theme-button-text-color, white);
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            margin: 0 auto;
-        }
-        #clickButton:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .tab-content {
-            display: none;
-            width: 100%;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        #tabs {
-            display: flex;
-            width: 100%;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
-        }
-        .tab {
-            flex: 1;
-            padding: 15px;
-            cursor: pointer;
-            text-align: center;
-            background-color: var(--tg-theme-secondary-bg-color, #ddd);
-            color: var(--tg-theme-text-color, #000000);
-            border: none;
-        }
-        .tab.active {
-            background-color: var(--tg-theme-bg-color, #f1f1f1);
-        }
-        #copyNotification {
-            display: none;
-            background-color: var(--tg-theme-button-color, #4CAF50);
-            color: var(--tg-theme-button-text-color, white);
-            text-align: center;
-            padding: 10px;
-            position: fixed;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 4px;
-        }
-        #welcomeModal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: var(--tg-theme-bg-color, #fefefe);
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            text-align: center;
-        }
-        #playButton {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: var(--tg-theme-button-color, #4CAF50);
-            color: var(--tg-theme-button-text-color, white);
-            border: none;
-            cursor: pointer;
-        }
+        /* Add your CSS styles here */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        #newUserModal, #welcomeModal, #copyNotification { display: none; }
     </style>
 </head>
 <body>
@@ -125,7 +18,7 @@
         <div id="score">Score: 0</div>
 
         <div id="gameTab" class="tab-content active">
-            <button id="clickButton" onclick="incrementScore()">Click me!</button>
+            <button id="clickMeBtn">Click me!</button>
         </div>
 
         <div id="referralTab" class="tab-content">
@@ -133,13 +26,13 @@
             <p>Invite friends and earn 50 coins for each new user!</p>
             <p>Referred users: <span id="referralCount">0</span></p>
             <p>Coins earned from referrals: <span id="referralEarnings">0</span></p>
-            <button onclick="copyReferralLink()">Copy Referral Link</button>
+            <button id="copyReferralLinkBtn">Copy Referral Link</button>
         </div>
     </div>
 
     <div id="tabs">
-        <button class="tab active" onclick="switchTab('gameTab')">Game</button>
-        <button class="tab" onclick="switchTab('referralTab')">Referral</button>
+        <button id="gameTabBtn">Game</button>
+        <button id="referralTabBtn">Referral</button>
     </div>
 
     <div id="copyNotification">Link copied!</div>
@@ -147,20 +40,26 @@
     <div id="welcomeModal">
         <div class="modal-content">
             <h2>Welcome to the Game!</h2>
-            <p id="welcomeMessage"></p>
-            <button id="playButton" onclick="closeWelcomeModal()">Play</button>
+            <button id="playBtn">Play</button>
+        </div>
+    </div>
+
+    <div id="newUserModal">
+        <div class="modal-content">
+            <h2>Welcome to the Game!</h2>
+            <div id="referrerInfo">
+                You were invited by: <span id="referrerUsername"></span>
+                <br>You received 50 bonus points!
+            </div>
+            <button id="startPlayingBtn">Start Playing</button>
         </div>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        let userId = tg.initDataUnsafe.user.id;
-        let username = tg.initDataUnsafe.user.username;
-        let score = 0;
-        let lastClickTime = 0;
-        const cooldownTime = 60000; // 1 minute in milliseconds
+        let userId, username, score = 0, lastClickTime = 0;
         let referrer = null;
 
+        // Function to get URL parameters
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
             var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -168,142 +67,113 @@
             return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-        }
-
-        function incrementScore() {
-            const now = Date.now();
-            if (now - lastClickTime >= cooldownTime) {
-                score += 10;
-                lastClickTime = now;
-                updateScore();
-                saveUserData();
-                startCooldown();
-            }
-        }
-
-        function startCooldown() {
-            const button = document.getElementById('clickButton');
-            button.disabled = true;
-            updateButtonText();
-        }
-
-        function updateButtonText() {
-            const button = document.getElementById('clickButton');
-            const now = Date.now();
-            const remainingTime = Math.max(0, cooldownTime - (now - lastClickTime));
-            const seconds = Math.ceil(remainingTime / 1000);
+        // Initialize on page load
+        window.onload = function() {
+            // Get referrer from URL if it exists
+            referrer = getUrlParameter('ref');
             
-            if (seconds > 0) {
-                button.textContent = `Wait ${seconds}s`;
-                button.disabled = true;
-                setTimeout(updateButtonText, 1000);
-            } else {
-                button.textContent = 'Click me!';
-                button.disabled = false;
+            // Get user data from Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                const initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
+                
+                if (initDataUnsafe && initDataUnsafe.user) {
+                    userId = initDataUnsafe.user.id;
+                    username = initDataUnsafe.user.username || 'User';
+                }
             }
-        }
+            
+            if (userId) {
+                // Save user to server
+                saveUser();
+            } else {
+                // Show welcome modal for non-Telegram users
+                document.getElementById('welcomeModal').style.display = 'block';
+            }
 
-        function updateScore() {
-            document.getElementById('score').textContent = `Score: ${score}`;
-        }
+            // Add event listeners
+            document.getElementById('clickMeBtn').addEventListener('click', incrementScore);
+            document.getElementById('copyReferralLinkBtn').addEventListener('click', copyReferralLink);
+            document.getElementById('gameTabBtn').addEventListener('click', () => switchTab('gameTab'));
+            document.getElementById('referralTabBtn').addEventListener('click', () => switchTab('referralTab'));
+            document.getElementById('startPlayingBtn').addEventListener('click', startPlaying);
+            document.getElementById('playBtn').addEventListener('click', startPlaying);
+        };
 
-        function saveUserData() {
+        function saveUser() {
             fetch('/api/saveUser', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    id: userId,
-                    username: username,
-                    score: score,
-                    lastClickTime: lastClickTime,
-                    referrer: referrer
-                }),
+                body: JSON.stringify({ id: userId, username, score, lastClickTime, referrer }),
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    console.log('User data saved successfully');
-                    updateReferralInfo();
                     if (data.isNewUser) {
-                        showWelcomeModal(data.referrerUsername);
+                        // Show modal for new user
+                        document.getElementById('newUserModal').style.display = 'block';
+                        if (data.referrerUsername) {
+                            document.getElementById('referrerInfo').style.display = 'block';
+                            document.getElementById('referrerUsername').textContent = data.referrerUsername;
+                        } else {
+                            document.getElementById('referrerInfo').style.display = 'none';
+                        }
                     }
-                    referrer = null; // Clear the referrer after saving
-                } else {
-                    console.error('Failed to save user data');
+                    // Update user data
+                    updateUserData(data.user);
                 }
             })
             .catch(error => console.error('Error:', error));
         }
 
-        function loadUserData() {
-            referrer = getUrlParameter('start');
-            fetch(`/api/getUser/${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    username = data.username || username;
-                    score = data.score || 0;
-                    lastClickTime = data.lastClickTime || 0;
-                    updateScore();
-                    document.getElementById('username').textContent = username;
-                    updateReferralInfo();
-                    updateButtonText();
-                    saveUserData(); // This will handle new user and referral logic
-                })
-                .catch(error => console.error('Error:', error));
+        function updateUserData(userData) {
+            score = userData.score;
+            lastClickTime = userData.lastClickTime;
+            document.getElementById('score').textContent = `Score: ${score}`;
+            document.getElementById('username').textContent = userData.username;
         }
 
-        function updateReferralInfo() {
-            fetch(`/api/getReferralInfo/${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('referralCount').textContent = data.referralCount;
-                    document.getElementById('referralEarnings').textContent = data.referralEarnings;
-                })
-                .catch(error => console.error('Error:', error));
+        function startPlaying() {
+            document.getElementById('newUserModal').style.display = 'none';
+            document.getElementById('welcomeModal').style.display = 'none';
+            switchTab('gameTab');
         }
 
-        function generateReferralLink() {
-            // Замените 'taptestttbot' на имя вашего бота
-            return `https://t.me/taptestttbot?start=${userId}`;
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (tabId === 'referralTab') {
+                updateReferralInfo();
+            }
+        }
+
+        function incrementScore() {
+            score++;
+            document.getElementById('score').textContent = `Score: ${score}`;
+            lastClickTime = Date.now();
+            saveUser();
         }
 
         function copyReferralLink() {
-            const link = generateReferralLink();
-            navigator.clipboard.writeText(link).then(() => {
+            const referralLink = `https://your-app-url.com?ref=${userId}`;
+            navigator.clipboard.writeText(referralLink).then(() => {
                 document.getElementById('copyNotification').style.display = 'block';
                 setTimeout(() => {
                     document.getElementById('copyNotification').style.display = 'none';
                 }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
             });
         }
 
-        function showWelcomeModal(referrerUsername) {
-            const modal = document.getElementById('welcomeModal');
-            const welcomeMessage = document.getElementById('welcomeMessage');
-            if (referrerUsername) {
-                welcomeMessage.textContent = `You were invited by ${referrerUsername}. You've been awarded 50 points to start!`;
-            } else {
-                welcomeMessage.textContent = `Welcome to the game! You've been awarded 50 points to start!`;
-            }
-            modal.style.display = 'block';
+        function updateReferralInfo() {
+            fetch(`/api/getReferralInfo/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('referralCount').textContent = data.referralCount;
+                document.getElementById('referralEarnings').textContent = data.referralEarnings;
+            })
+            .catch(error => console.error('Error:', error));
         }
-
-        function closeWelcomeModal() {
-            document.getElementById('welcomeModal').style.display = 'none';
-        }
-
-        // Initialize the app
-        tg.expand();
-        loadUserData();
     </script>
 </body>
 </html>
