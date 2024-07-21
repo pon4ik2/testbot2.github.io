@@ -8,10 +8,6 @@
     {
       "src": "*.html",
       "use": "@vercel/static"
-    },
-    {
-      "src": "*.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -20,12 +16,12 @@
       "dest": "index.py"
     },
     {
-      "src": "/status",
-      "dest": "index.py"
+      "src": "/",
+      "dest": "index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "index.py"
     }
   ]
 }
