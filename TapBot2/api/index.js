@@ -21,9 +21,9 @@ app.post('/api/saveUser', (req, res) => {
     console.log('Request body:', req.body);
 
     try {
-        const { id, username, score, lastClickTime, referrer } = req.body;
+        const { id, username, points, lastClickTime, referrer } = req.body;
         
-        if (!id || !username || score === undefined || lastClickTime === undefined) {
+        if (!id || !username || points === undefined || lastClickTime === undefined) {
             console.error('Invalid data received');
             return res.status(400).json({ success: false, error: 'Invalid data' });
         }
@@ -32,18 +32,18 @@ app.post('/api/saveUser', (req, res) => {
         if (!users[id]) {
             // New user
             isNewUser = true;
-            users[id] = { username, score: 50, lastClickTime, referrals: [] }; // Start with 50 points
+            users[id] = { username, points: 50, lastClickTime, referrals: [] }; // Start with 50 points
             
             // If there's a referrer, add bonus and update referrer's data
             if (referrer && users[referrer]) {
-                users[referrer].score += 50; // Add 50 coins to referrer
+                users[referrer].points += 50; // Add 50 coins to referrer
                 users[referrer].referrals.push(id);
-                console.log(`User ${referrer} referred user ${id}. New score for referrer: ${users[referrer].score}`);
+                console.log(`User ${referrer} referred user ${id}. New points for referrer: ${users[referrer].points}`);
             }
         } else {
             // Existing user, update data
             users[id].username = username;
-            users[id].score = score;
+            users[id].points = points;
             users[id].lastClickTime = lastClickTime;
         }
 
@@ -68,7 +68,7 @@ app.get('/api/getUser/:id', (req, res) => {
             res.json(users[id]);
         } else {
             console.log('User not found, returning default data');
-            res.json({ username: '', score: 0, lastClickTime: 0, referrals: [] });
+            res.json({ username: '', points: 0, lastClickTime: 0, referrals: [] });
         }
     } catch (error) {
         console.error('Error in /api/getUser:', error);
