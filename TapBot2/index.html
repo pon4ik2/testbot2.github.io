@@ -292,13 +292,14 @@
             if (referrerUsername) {
                 welcomeMessage.textContent = `You were invited by ${referrerUsername}. You've been awarded 50 points to start!`;
             } else {
-                welcomeMessage.textContent = `Welcome to the game! You've been awarded 50 points to start!`;
+
             }
             modal.style.display = 'block';
         }
 
         function closeWelcomeModal() {
             document.getElementById('welcomeModal').style.display = 'none';
+            updatePoints();
         }
 
         // Initialize the app
