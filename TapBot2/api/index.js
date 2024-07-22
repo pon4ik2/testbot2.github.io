@@ -32,11 +32,12 @@ app.post('/api/saveUser', (req, res) => {
         if (!users[id]) {
             // New user
             isNewUser = true;
-            users[id] = { username, points: +50, lastClickTime, referrals: [] }; // Start with 50 points
+            const initialPoints = points || 0;
+            users[id] = { username, points: initialPoints + 50, lastClickTime, referrals: [] }; // Start with current points + 50
             
             // If there's a referrer, add bonus and update referrer's data
             if (referrer && users[referrer]) {
-                users[referrer].points += 50; // Add 50 coins to referrer
+                users[referrer].points += 50; // Add 50 points to referrer
                 users[referrer].referrals.push(id);
                 console.log(`User ${referrer} referred user ${id}. New points for referrer: ${users[referrer].points}`);
             }
