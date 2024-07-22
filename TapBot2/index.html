@@ -90,33 +90,33 @@
             transform: translateX(-50%);
             border-radius: 4px;
         }
-##        #welcomeModal {
-##            display: none;
-##            position: fixed;
-##            z-index: 1;
-##            left: 0;
-##            top: 0;
-##            width: 100%;
-##            height: 100%;
-##            overflow: auto;
-##            background-color: rgba(0,0,0,0.4);
-##        }
-##        .modal-content {
-##            background-color: var(--tg-theme-bg-color, #fefefe);
-##            margin: 15% auto;
-##            padding: 20px;
-##            border: 1px solid #888;
-##            width: 80%;
-##            text-align: center;
-##        }
-##        #playButton {
-##            margin-top: 20px;
-##            padding: 10px 20px;
-##            background-color: var(--tg-theme-button-color, #4CAF50);
-##            color: var(--tg-theme-button-text-color, white);
-##            border: none;
-##            cursor: pointer;
-##        }
+        #welcomeModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: var(--tg-theme-bg-color, #fefefe);
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            text-align: center;
+        }
+        #playButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: var(--tg-theme-button-color, #4CAF50);
+            color: var(--tg-theme-button-text-color, white);
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -144,13 +144,13 @@
 
     <div id="copyNotification">Link copied!</div>
 
-##    <div id="welcomeModal">
-##        <div class="modal-content">
-##            <h2>Welcome to the Game!</h2>
-##            <p id="welcomeMessage"></p>
-##            <button id="playButton" onclick="closeWelcomeModal()">Play</button>
-##        </div>
-##    </div>
+    <div id="welcomeModal">
+        <div class="modal-content">
+            <h2>Welcome to the Game!</h2>
+            <p id="welcomeMessage"></p>
+            <button id="playButton" onclick="closeWelcomeModal()">Play</button>
+        </div>
+    </div>
 
     <script>
         let tg = window.Telegram.WebApp;
