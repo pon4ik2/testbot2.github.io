@@ -63,16 +63,16 @@ def start(update: Update, context: CallbackContext):
     keyboard = InlineKeyboardMarkup([[webapp_button]])
     update.message.reply_text(welcome_text, reply_markup=keyboard)
 
-##def button_click(update: Update, context: CallbackContext):
-##   logger.info("Button click received")
-##    query = update.callback_query
-##    query.answer()
+def button_click(update: Update, context: CallbackContext):
+   logger.info("Button click received")
+    query = update.callback_query
+    query.answer()
 
-##    if query.data == "play":
-##        user_id = query.from_user.id
-##        user_data = load_users().get(str(user_id), {"points": 0})
-##        query.edit_message_text(f"Начинаем игру! Твой текущий баланс: {user_data['points']} поинтов.")
-##        logger.info(f"Game started for user {user_id}")
+    if query.data == "play":
+        user_id = query.from_user.id
+        user_data = load_users().get(str(user_id), {"points": 0})
+        query.edit_message_text(f"Начинаем игру! Твой текущий баланс: {user_data['points']} поинтов.")
+        logger.info(f"Game started for user {user_id}")
 
 def error_handler(update: Update, context: CallbackContext):
     logger.error(f"An error occurred: {context.error}")
