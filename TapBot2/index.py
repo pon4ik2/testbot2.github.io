@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Замените на ваш токен бота
-TOKEN = '7214325392:AAEGuEDFxdtPiPZDEZCiipkB9jebdDh9_7s'
+TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
 bot = Bot(token=TOKEN)
 
 # Путь к файлу с данными пользователей
@@ -49,22 +49,22 @@ def start(update: Update, context: CallbackContext):
     referrer_id = context.args[0] if context.args else None
 
     if is_new_user and referrer_id:
-        user_data = update_user(user_id, username, points+=50)
-        referrer_data = update_user(referrer_id, "", points+=50, referrals+=1)
+        user_data = update_user(user_id, username, points=50)
+        referrer_data = update_user(referrer_id, "", points=50, referrals=1)
         welcome_text = f"Приветствуем! Тебя пригласил {referrer_data['username']}. На твой баланс начислено 50 поинтов!"
     elif is_new_user:
         user_data = update_user(user_id, username)
         welcome_text = "Приветствуем! Давай играть."
     else:
         user_data = users[str(user_id)]
-        welcome_text = f"С возвращением! Ты приглосил уже {user_data['referrals']} игроков и заработал за это {user_data['points']} ."
+        welcome_text = f"С возвращением! Ты приглосил уже {user_data['referrals']} игроков и заработал за это {user_data['points']} поинтов."
 
-    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://testbot2-github-io-62lc.vercel.app/"))
+    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://your-webapp-url.com"))
     keyboard = InlineKeyboardMarkup([[webapp_button]])
     update.message.reply_text(welcome_text, reply_markup=keyboard)
 
 def button_click(update: Update, context: CallbackContext):
-   logger.info("Button click received")
+    logger.info("Button click received")
     query = update.callback_query
     query.answer()
 
@@ -80,7 +80,7 @@ def error_handler(update: Update, context: CallbackContext):
 # Настройка диспетчера
 dispatcher = Dispatcher(bot, None, use_context=True)
 dispatcher.add_handler(CommandHandler("start", start))
-##dispatcher.add_handler(CallbackQueryHandler(button_click))
+dispatcher.add_handler(CallbackQueryHandler(button_click))
 dispatcher.add_error_handler(error_handler)
 
 @app.route('/')
@@ -94,11 +94,6 @@ def webhook():
     logger.info(f"Update: {update}")
     dispatcher.process_update(update)
     return 'OK'
-
-#
-#@app.route('/')
-#def index():
-#    return send_file('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
