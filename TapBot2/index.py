@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Замените на ваш токен бота
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+TOKEN = '7214325392:AAEGuEDFxdtPiPZDEZCiipkB9jebdDh9_7s'
 bot = Bot(token=TOKEN)
 
 # Путь к файлу с данными пользователей
