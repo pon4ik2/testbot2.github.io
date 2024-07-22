@@ -49,15 +49,17 @@ def start(update: Update, context: CallbackContext):
     referrer_id = context.args[0] if context.args else None
 
     if is_new_user and referrer_id:
-        user_data = update_user(user_id, username, points=50)
+        user_data = update_user(user_id, username, points=0)
         referrer_data = update_user(referrer_id, "", points=50, referrals=1)
+        user_data["points"] += 50  # Add 50 points to new user
+        save_users(users)
         welcome_text = f"Приветствуем! Тебя пригласил {referrer_data['username']}. На твой баланс начислено 50 поинтов!"
     elif is_new_user:
-        user_data = update_user(user_id, username)
+        user_data = update_user(user_id, username, points=0)
         welcome_text = "Приветствуем! Давай играть."
     else:
         user_data = users[str(user_id)]
-        welcome_text = f"С возвращением! Ты приглосил уже {user_data['referrals']} игроков и заработал за это {user_data['points']} поинтов."
+        welcome_text = f"С возвращением! Ты пригласил уже {user_data['referrals']} игроков и заработал за это {user_data['points']} поинтов."
 
     webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://your-webapp-url.com"))
     keyboard = InlineKeyboardMarkup([[webapp_button]])
