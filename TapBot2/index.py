@@ -56,12 +56,12 @@ def start(update: Update, context: CallbackContext):
         welcome_text = f"Приветствуем! Тебя пригласил {referrer_data['username']}. На твой баланс начислено 50 поинтов!"
     elif is_new_user:
         user_data = update_user(user_id, username, points=0)
-        welcome_text = "Приветствуем! Давай играть."
+        welcome_text = "Приветствуем! Давай играть.."
     else:
         user_data = users[str(user_id)]
         welcome_text = f"С возвращением! Ты пригласил уже {user_data['referrals']} игроков и заработал за это {user_data['points']} поинтов."
 
-    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://testbot2-github-io-62lc.vercel.app/"))
+    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="http://www.nbuv.gov.ua/"))
     keyboard = InlineKeyboardMarkup([[webapp_button]])
     update.message.reply_text(welcome_text, reply_markup=keyboard)
 
