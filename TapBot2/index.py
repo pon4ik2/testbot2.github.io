@@ -61,7 +61,7 @@ def start(update: Update, context: CallbackContext):
         user_data = users[str(user_id)]
         welcome_text = f"С возвращением! Ты пригласил уже {user_data['referrals']} игроков и заработал за это {user_data['points']} поинтов."
 
-    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="http://www.nbuv.gov.ua/"))
+    webapp_button = InlineKeyboardButton("Играть", web_app=WebAppInfo(url="https://www.nbuv.gov.ua/"))
     keyboard = InlineKeyboardMarkup([[webapp_button]])
     update.message.reply_text(welcome_text, reply_markup=keyboard)
 
